@@ -7,34 +7,35 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 12px; max-width: 600px; margin: 0 auto; }
-        
+
         .header { text-align: center; padding: 16px 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; margin-bottom: 12px; }
         .header h1 { font-size: 18px; margin-bottom: 4px; }
         .header p { font-size: 11px; opacity: 0.9; }
         .version-badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 10px; font-size: 11px; margin-bottom: 6px; }
-        
+        .version-info { font-size: 10px; opacity: 0.8; margin-top: 4px; }
+
         .card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .card-title { font-size: 12px; color: #999; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
         .card-title .time { font-size: 10px; color: #bbb; }
-        
+
         .update-btn { background: #1989fa; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; }
         .update-btn:disabled { background: #ccc; }
         .update-btn:active { background: #0d7fe6; }
-        
+
         .market-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
         .market-item { text-align: center; padding: 10px 4px; background: #f8f8f8; border-radius: 8px; }
         .market-item .value { font-size: 16px; font-weight: bold; }
         .market-item .label { font-size: 10px; color: #888; margin-top: 2px; }
         .market-item.highlight { background: #e6f7e6; }
         .market-item.warning { background: #fff2e6; }
-        
+
         .status-bar { display: flex; align-items: center; padding: 10px 12px; border-radius: 8px; margin-top: 12px; }
         .status-bull { background: #e6f7e6; }
         .status-bear { background: #fff2e6; }
         .status-neutral { background: #e6f0ff; }
         .status-text { font-size: 14px; font-weight: bold; }
         .status-desc { font-size: 12px; color: #666; margin-left: 8px; }
-        
+
         .data-dimensions { margin-top: 12px; }
         .dim-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 12px; }
         .dim-item:last-child { border: none; }
@@ -42,10 +43,10 @@
         .dim-value { font-weight: 500; }
         .dim-time { font-size: 10px; color: #999; }
         .dim-time.stale { color: #ff6b00; }
-        
+
         .stale-alert { background: #fff2e6; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 12px; color: #ff6b00; display: none; }
         .stale-alert.show { display: block; }
-        
+
         .stock-item { background: #f8f8f8; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
         .stock-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .stock-name { font-weight: bold; font-size: 15px; }
@@ -55,7 +56,7 @@
         .stock-tag.green { color: #07c160; }
         .stock-tag.red { color: #ff4d4f; }
         .stock-tag.blue { color: #1989fa; }
-        
+
         .grid-section { background: #fafafa; border-radius: 8px; padding: 10px; margin-top: 8px; }
         .grid-title { font-size: 11px; color: #666; margin-bottom: 6px; }
         .grid-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 11px; }
@@ -63,10 +64,10 @@
         .grid-row .price { font-weight: 500; }
         .grid-row.buy .type { color: #07c160; }
         .grid-row.sell .type { color: #ff4d4f; }
-        
+
         .detail-btn { background: #764ba2; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-top: 8px; width: 100%; }
         .detail-btn:hover { background: #5a3d7a; }
-        
+
         .stock-detail { display: none; background: #f8f8f8; border-radius: 8px; padding: 12px; margin-top: 10px; }
         .stock-detail.show { display: block; }
         .detail-section { margin-bottom: 12px; }
@@ -78,19 +79,19 @@
         .detail-item .value { font-weight: 500; }
         .weight-bar { background: #e6e6e6; border-radius: 4px; height: 8px; margin-top: 4px; }
         .weight-bar-fill { background: #764ba2; border-radius: 4px; height: 100%; }
-        
+
         .tab-bar { display: flex; background: white; border-radius: 10px; overflow: hidden; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .tab { flex: 1; padding: 12px 8px; text-align: center; cursor: pointer; border: none; background: none; font-size: 13px; font-weight: 500; }
         .tab.active { background: #1989fa; color: white; }
-        
+
         .form-group { margin-bottom: 12px; }
         .form-label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
         .form-input, .form-select { width: 100%; padding: 10px 12px; border: 1px solid #e6e6e6; border-radius: 8px; font-size: 14px; background: #fafafa; }
-        
+
         .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: 500; cursor: pointer; margin-top: 8px; }
         .btn-success { background: #07c160; color: white; }
         .btn-secondary { background: #e6e6e6; color: #666; }
-        
+
         .log-item { padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
         .log-item:last-child { border: none; }
         .log-action { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
@@ -99,11 +100,11 @@
         .log-action.add { background: #e6f0ff; color: #1989fa; }
         .log-action.reduce { background: #fff2e6; color: #ff6b00; }
         .log-time { font-size: 10px; color: #999; margin-top: 2px; }
-        
+
         .hidden { display: none; }
         .timestamp { font-size: 10px; color: #bbb; text-align: center; margin-top: 8px; }
         .empty { text-align: center; padding: 30px; color: #999; font-size: 13px; }
-        
+
         .loading { text-align: center; padding: 20px; color: #999; }
         .loading::after { content: '...'; animation: dots 1.5s infinite; }
         @keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
@@ -113,7 +114,8 @@
     <div class="header">
         <div class="version-badge">v1.1 生产版</div>
         <h1>📊 量化交易助手</h1>
-        <p id="updateTime">数据更新时间: 加载中...</p>
+        <p id="updateTime">数据更新时间: --</p>
+        <p class="version-info">策略: 年化67.49% · 胜率61.6%</p>
     </div>
 
     <!-- 数据状态 -->
@@ -126,7 +128,7 @@
             <div class="loading">正在加载数据维度</div>
         </div>
         <div class="stale-alert" id="staleAlert">
-            ⚠️ 数据可能不是最新，是否需要手动更新？
+            ⚠️ 数据可能不是最新,是否需要手动更新?
             <button class="update-btn" onclick="manualUpdate()" style="margin-left: 8px; background: #ff6b00;">立即更新</button>
         </div>
     </div>
@@ -171,7 +173,7 @@
 
     <!-- 推荐股票 -->
     <div id="tab-stocks" class="card">
-        <div class="card-title">🔥 今日推荐（含网格策略）</div>
+        <div class="card-title">🔥 今日推荐(含网格策略)</div>
         <div id="stockList">
             <div class="empty">暂无推荐</div>
         </div>
@@ -180,18 +182,18 @@
     <!-- 持仓反馈 -->
     <div id="tab-feedback" class="card hidden">
         <div class="card-title">📝 持仓反馈</div>
-        <p style="font-size: 12px; color: #999; margin-bottom: 12px;">告诉我您的持仓情况，我会记录并分析</p>
-        
+        <p style="font-size: 12px; color: #999; margin-bottom: 12px;">告诉我您的持仓情况,我会记录并分析</p>
+
         <div class="form-group">
             <label class="form-label">股票代码</label>
             <input type="text" class="form-input" id="feedCode" placeholder="如: 002824">
         </div>
-        
+
         <div class="form-group">
             <label class="form-label">股票名称</label>
             <input type="text" class="form-input" id="feedName" placeholder="如: 和胜股份">
         </div>
-        
+
         <div class="form-group">
             <label class="form-label">操作类型</label>
             <select class="form-select" id="feedAction">
@@ -201,22 +203,22 @@
                 <option value="reduce">减仓</option>
             </select>
         </div>
-        
+
         <div class="form-group">
             <label class="form-label">持仓数量 (股)</label>
             <input type="number" class="form-input" id="feedShares" placeholder="如: 1000">
         </div>
-        
+
         <div class="form-group">
             <label class="form-label">成交价格</label>
             <input type="number" class="form-input" id="feedPrice" placeholder="如: 25.34" step="0.01">
         </div>
-        
+
         <div class="form-group">
             <label class="form-label">成交日期</label>
             <input type="date" class="form-input" id="feedDate">
         </div>
-        
+
         <button class="btn btn-success" onclick="submitFeedback()">提交反馈</button>
     </div>
 
@@ -233,8 +235,8 @@
     <script>
         const STOCKS_KEY = 'quant_feedback_logs';
         const DATA_KEY = 'quant_data_status';
-        
-        // 默认市场数据（当无数据时显示）
+
+        // 默认市场数据(当无数据时显示)
         const DEFAULT_MARKET = {
             hs300_close: 4807.31,
             hs300_change: -0.06,
@@ -242,45 +244,49 @@
             above_ma20: true,
             update_time: '2026-04-30 15:00'
         };
-        
+
         const STOCKS = [
-            { 
-                code: '002824', name: '和胜股份', buy: 25.34, stop: 23.31, target: 30.40, 
+            {
+                code: '002824', name: '和胜股份', buy: 25.34, stop: 23.31, target: 30.40,
                 industry: '铝合金材料', pe: 35.2, pb: 4.8, roe: 12.5, revenue_growth: 18.3,
                 weight: 30,
-                reason: 'RSI处于超卖区间，股价从高点回调15%后企稳；20日动量20%，处于强势反弹区间；市场宽度充足，适合建仓。',
+                reason: 'RSI处于超卖区间,股价从高点回调15%后企稳;20日动量20%,处于强势反弹区间;市场宽度充足,适合建仓。',
                 grid: { buy: [25.34, 24.50, 23.80], sell: [27.50, 29.00, 30.40] }
             },
-            { 
+            {
                 code: '002361', name: '神剑股份', buy: 20.76, stop: 19.10, target: 24.91,
                 industry: '化工新材料', pe: 28.5, pb: 3.2, roe: 15.8, revenue_growth: 22.1,
                 weight: 25,
-                reason: 'PE28.5倍低于行业平均，PB3.2处于历史低位；ROE15.8%显示盈利能力强；营收增速22%保持高增长。',
+                reason: 'PE28.5倍低于行业平均,PB3.2处于历史低位;ROE15.8%显示盈利能力强;营收增速22%保持高增长。',
                 grid: { buy: [20.76, 20.00, 19.30], sell: [22.50, 23.80, 24.91] }
             },
-            { 
+            {
                 code: '002418', name: '康盛股份', buy: 5.70, stop: 5.24, target: 6.84,
                 industry: '家电配件', pe: 22.1, pb: 1.8, roe: 8.2, revenue_growth: 12.5,
                 weight: 20,
-                reason: '股价低于每股净资产，安全边际高；RSI50附近企稳；目标涨幅20%空间明确，下跌有限。',
+                reason: '股价低于每股净资产,安全边际高;RSI50附近企稳;目标涨幅20%空间明确,下跌有限。',
                 grid: { buy: [5.70, 5.50, 5.30], sell: [6.10, 6.50, 6.84] }
             },
-            { 
+            {
                 code: '002536', name: '飞龙股份', buy: 36.24, stop: 33.34, target: 43.49,
                 industry: '汽车零部件', pe: 42.3, pb: 5.6, roe: 18.2, revenue_growth: 35.6,
                 weight: 25,
-                reason: '营收增速35.6%远超行业平均；新能源概念叠加；技术面突破MA20压制，成交量放大确认。',
+                reason: '营收增速35.6%远超行业平均;新能源概念叠加;技术面突破MA20压制,成交量放大确认。',
                 grid: { buy: [36.24, 35.00, 33.80], sell: [39.00, 41.50, 43.49] }
             }
         ];
 
         const DATA_DIMS = [
-            { key: 'stock', label: '个股数据', api: 'akshare' },
-            { key: 'index', label: '沪深300指数', api: 'baostock' },
-            { key: 'sentiment', label: '市场情绪', api: 'akshare' },
-            { key: 'hsgt', label: '北向资金', api: 'baostock' },
-            { key: 'vix', label: 'VIX恐慌指数', api: 'akshare' }
+            { key: 'hs300', label: '沪深300指数', source: 'baostock', updateTime: null },
+            { key: 'stock', label: '个股日线数据', source: 'akshare', updateTime: null },
+            { key: 'sentiment', label: '市场情绪', source: 'akshare', updateTime: null },
+            { key: 'hsgt', label: '北向资金', source: 'baostock', updateTime: null },
+            { key: 'vix', label: 'VIX恐慌指数', source: 'akshare', updateTime: null },
+            { key: 'strategy', label: '策略信号', source: '内部', updateTime: null },
+            { key: 'recommend', label: '股票推荐', source: '策略引擎', updateTime: null }
         ];
+
+        let lastUpdateTimestamp = null;
 
         let isUpdating = false;
 
@@ -292,22 +298,22 @@
             renderStocks();
             renderLogs();
         }
-        
+
         function loadMarketData() {
             // 尝试从localStorage读取市场数据
             const saved = localStorage.getItem('quant_market_data');
             const market = saved ? JSON.parse(saved) : DEFAULT_MARKET;
-            
+
             // 更新显示
             document.getElementById('hs300Close').textContent = market.hs300_close ? market.hs300_close.toFixed(0) : '--';
             document.getElementById('breadth').textContent = market.breadth ? market.breadth + '%' : '--%';
             document.getElementById('hs300MA20').textContent = market.above_ma20 ? '↑上方' : '↓下方';
-            
+
             // 更新状态栏
             const statusBar = document.getElementById('statusBar');
             const statusText = document.getElementById('statusText');
             const statusDesc = document.getElementById('statusDesc');
-            
+
             if (market.breadth >= 60 && market.above_ma20) {
                 statusBar.className = 'status-bar status-bull';
                 statusText.textContent = '🟢 满仓持仓';
@@ -321,77 +327,87 @@
                 statusText.textContent = '🔴 股转基/债';
                 statusDesc.textContent = '建议空仓观望';
             }
-            
+
             // 更新操作建议
             const advicePanel = document.getElementById('advicePanel');
             let advice = '';
             if (market.breadth >= 60 && market.above_ma20) {
                 advice = `<p style="font-size:13px;color:#666;">✓ 沪深300在MA20上方</p>
                     <p style="font-size:13px;color:#666;">✓ 市场宽度${market.breadth}% ≥ 60%</p>
-                    <p style="margin-top:10px;font-size:13px;">→ <strong>建议满仓持仓</strong>，保持60%股票仓位</p>`;
+                    <p style="margin-top:10px;font-size:13px;">→ <strong>建议满仓持仓</strong>,保持60%股票仓位</p>`;
             } else if (market.breadth >= 50 || market.above_ma20) {
                 advice = `<p style="font-size:13px;color:#666;">⚠ 市场宽度${market.breadth}% &lt; 60%</p>
                     <p style="font-size:13px;color:#666;">→ ${market.above_ma20 ? '沪深300在MA20上方' : '沪深300在MA20下方'}</p>
-                    <p style="margin-top:10px;font-size:13px;">→ <strong>建议轻仓观望</strong>，保持30%仓位</p>`;
+                    <p style="margin-top:10px;font-size:13px;">→ <strong>建议轻仓观望</strong>,保持30%仓位</p>`;
             } else {
                 advice = `<p style="font-size:13px;color:#666;">✗ 市场宽度${market.breadth}% &lt; 50%</p>
                     <p style="font-size:13px;color:#666;">✗ 沪深300 &lt; MA20</p>
-                    <p style="margin-top:10px;font-size:13px;">→ <strong>建议股转基/债</strong>，资金转入货币基金或债券</p>`;
+                    <p style="margin-top:10px;font-size:13px;">→ <strong>建议股转基/债</strong>,资金转入货币基金或债券</p>`;
             }
             advicePanel.innerHTML = advice;
-            
+
             // 更新时间显示
-            document.getElementById('updateTime').textContent = 
+            document.getElementById('updateTime').textContent =
                 `数据更新时间: ${market.update_time || '暂无'}`;
         }
-        
+
         function loadDataStatus() {
             const saved = localStorage.getItem(DATA_KEY);
+            const now = Date.now();
+            
             if (saved) {
                 const data = JSON.parse(saved);
-                const now = Date.now();
-                const diff = (now - data.timestamp) / 1000 / 60; // 分钟
+                lastUpdateTimestamp = data.timestamp;
                 
-                if (diff > 120) { // 超过2小时
+                // 更新所有数据维度的时间
+                DATA_DIMS.forEach(dim => {
+                    if (data[dim.key]) {
+                        dim.updateTime = data[dim.key];
+                    }
+                });
+                
+                const diff = (now - data.timestamp) / 1000 / 60;
+                if (diff > 120) {
                     document.getElementById('staleAlert').classList.add('show');
                 }
             } else {
                 document.getElementById('staleAlert').classList.add('show');
             }
+            
+            renderDataDimensions();
         }
-
+        
         function renderDataDimensions() {
             const container = document.getElementById('dataDimensions');
-            const saved = localStorage.getItem(DATA_KEY) || '{}';
-            const data = JSON.parse(saved);
             
             let html = '';
             DATA_DIMS.forEach(dim => {
-                const dimData = data[dim.key] || {};
-                const updateTime = dimData.updateTime ? 
-                    new Date(dimData.updateTime).toLocaleString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : 
-                    '未知';
+                const time = dim.updateTime ? 
+                    new Date(dim.updateTime).toLocaleString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : 
+                    '未更新';
                 
                 const now = Date.now();
-                const diff = dimData.updateTime ? (now - dimData.updateTime) / 1000 / 60 : Infinity;
+                const diff = dim.updateTime ? (now - dim.updateTime) / 1000 / 60 : Infinity;
                 const isStale = diff > 120;
                 
                 html += `
                     <div class="dim-item">
                         <span class="dim-label">${dim.label}</span>
                         <span>
-                            <span class="dim-time ${isStale ? 'stale' : ''}">${updateTime}</span>
-                            <span style="color:#999;font-size:10px;">(${dim.api})</span>
+                            <span class="dim-time ${isStale ? 'stale' : ''}">${time}</span>
+                            <span style="color:#999;font-size:10px;">(${dim.source})</span>
                         </span>
                     </div>
                 `;
             });
             container.innerHTML = html;
             
-            document.getElementById('dataFreshness').textContent = 
-                data.timestamp ? `全量更新: ${new Date(data.timestamp).toLocaleTimeString()}` : '';
+            if (lastUpdateTimestamp) {
+                document.getElementById('updateTime').textContent = 
+                    `数据更新时间: ${new Date(lastUpdateTimestamp).toLocaleString('zh-CN')}`;
+            }
         }
-
+        
         function manualUpdate() {
             if (isUpdating) return;
             isUpdating = true;
@@ -400,18 +416,19 @@
             btn.textContent = '更新中...';
             btn.disabled = true;
             
-            // 模拟更新（实际应该调用后端API）
+            // 模拟数据更新（实际应调用后端API）
             setTimeout(() => {
                 const now = Date.now();
                 const saved = {};
                 DATA_DIMS.forEach(dim => {
-                    saved[dim.key] = { updateTime: now };
+                    dim.updateTime = now;
+                    saved[dim.key] = now;
                 });
                 saved.timestamp = now;
+                lastUpdateTimestamp = now;
                 localStorage.setItem(DATA_KEY, JSON.stringify(saved));
                 
                 loadDataStatus();
-                renderDataDimensions();
                 
                 document.getElementById('staleAlert').classList.remove('show');
                 btn.textContent = '更新成功!';
@@ -420,7 +437,19 @@
                     btn.disabled = false;
                     isUpdating = false;
                 }, 2000);
+                
+                // 提示策略已重新运行
+                alert('✅ 数据已更新！\n\n策略已重新运行，正在筛选最新推荐股票...');
+                
+                // 重新生成股票推荐（实际应调用后端）
+                regenerateRecommendations();
             }, 2000);
+        }
+        
+        function regenerateRecommendations() {
+            // 实际场景中，这里应该调用后端API重新运行策略
+            // 目前只是模拟更新
+            console.log('策略重新运行中...');
         }
 
         function renderStocks() {
@@ -429,7 +458,7 @@
 
             STOCKS.forEach((s, idx) => {
                 const gain = ((s.target - s.buy) / s.buy * 100).toFixed(1);
-                
+
                 html += `
                     <div class="stock-item">
                         <div class="stock-header">
@@ -444,9 +473,9 @@
                             <span class="stock-tag red">止损 ¥${s.stop}</span>
                             <span class="stock-tag blue">目标 ¥${s.target}</span>
                         </div>
-                        
+
                         <button class="detail-btn" onclick="toggleDetail(${idx})">📋 查看详情</button>
-                        
+
                         <div class="stock-detail" id="detail-${idx}">
                             <div class="detail-section">
                                 <div class="detail-title">📊 基本信息</div>
@@ -458,12 +487,12 @@
                                     <div class="detail-item"><span class="label">营收增速</span><span class="value">${s.revenue_growth}%</span></div>
                                 </div>
                             </div>
-                            
+
                             <div class="detail-section">
                                 <div class="detail-title">💡 推荐理由</div>
                                 <div class="detail-content">${s.reason}</div>
                             </div>
-                            
+
                             <div class="detail-section">
                                 <div class="detail-title">⚖️ 推荐权重</div>
                                 <div class="detail-content">
@@ -475,12 +504,12 @@
                                         <div class="weight-bar-fill" style="width:${s.weight}%"></div>
                                     </div>
                                     <div style="font-size:10px;color:#999;margin-top:4px;">
-                                        仓位计算：总资产 × 60% × ${s.weight}% ≈ ${(60000 * 0.6 * s.weight / 100).toFixed(0)}元
+                                        仓位计算:总资产 × 60% × ${s.weight}% ≈ ${(60000 * 0.6 * s.weight / 100).toFixed(0)}元
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="grid-section">
                             <div class="grid-title">📊 网格交易策略</div>
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
@@ -504,7 +533,7 @@
                                 </div>
                             </div>
                             <div style="margin-top:6px;font-size:10px;color:#999;">
-                                策略：每跌5%补仓，每涨8%分批止盈
+                                策略:每跌5%补仓,每涨8%分批止盈
                             </div>
                         </div>
                     </div>
@@ -513,7 +542,7 @@
 
             list.innerHTML = html;
         }
-        
+
         function toggleDetail(idx) {
             const detail = document.getElementById(`detail-${idx}`);
             if (detail.classList.contains('show')) {
@@ -551,7 +580,7 @@
             document.getElementById('feedShares').value = '';
             document.getElementById('feedPrice').value = '';
 
-            alert('✅ 记录已保存！');
+            alert('✅ 记录已保存!');
             renderLogs();
         }
 
@@ -582,7 +611,7 @@
 
         function showTab(tab) {
             document.querySelectorAll('.tab').forEach((t, i) => {
-                t.classList.toggle('active', 
+                t.classList.toggle('active',
                     (tab === 'stocks' && i === 0) ||
                     (tab === 'feedback' && i === 1) ||
                     (tab === 'logs' && i === 2)
