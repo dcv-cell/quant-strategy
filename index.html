@@ -218,6 +218,16 @@
     <script>
         const STOCKS_KEY = 'quant_feedback_logs';
         const DATA_KEY = 'quant_data_status';
+        
+        // 默认市场数据（当无数据时显示）
+        const DEFAULT_MARKET = {
+            hs300_close: 4807.31,
+            hs300_change: -0.06,
+            breadth: 49.4,
+            above_ma20: true,
+            update_time: '2026-04-30 15:00'
+        };
+        
         const STOCKS = [
             { code: '002824', name: '和胜股份', buy: 25.34, stop: 23.31, target: 30.40, 
               grid: { buy: [25.34, 24.50, 23.80], sell: [27.50, 29.00, 30.40] }},
@@ -242,11 +252,64 @@
         function init() {
             document.getElementById('feedDate').value = new Date().toISOString().split('T')[0];
             loadDataStatus();
+            loadMarketData();
             renderDataDimensions();
             renderStocks();
             renderLogs();
         }
-
+        
+        function loadMarketData() {
+            // 尝试从localStorage读取市场数据
+            const saved = localStorage.getItem('quant_market_data');
+            const market = saved ? JSON.parse(saved) : DEFAULT_MARKET;
+            
+            // 更新显示
+            document.getElementById('hs300Close').textContent = market.hs300_close ? market.hs300_close.toFixed(0) : '--';
+            document.getElementById('breadth').textContent = market.breadth ? market.breadth + '%' : '--%';
+            document.getElementById('hs300MA20').textContent = market.above_ma20 ? '↑上方' : '↓下方';
+            
+            // 更新状态栏
+            const statusBar = document.getElementById('statusBar');
+            const statusText = document.getElementById('statusText');
+            const statusDesc = document.getElementById('statusDesc');
+            
+            if (market.breadth >= 60 && market.above_ma20) {
+                statusBar.className = 'status-bar status-bull';
+                statusText.textContent = '🟢 满仓持仓';
+                statusDesc.textContent = '建议60%仓位';
+            } else if (market.breadth >= 50 || market.above_ma20) {
+                statusBar.className = 'status-bar status-neutral';
+                statusText.textContent = '🟡 轻仓观望';
+                statusDesc.textContent = '建议30%仓位';
+            } else {
+                statusBar.className = 'status-bar status-bear';
+                statusText.textContent = '🔴 股转基/债';
+                statusDesc.textContent = '建议空仓观望';
+            }
+            
+            // 更新操作建议
+            const advicePanel = document.getElementById('advicePanel');
+            let advice = '';
+            if (market.breadth >= 60 && market.above_ma20) {
+                advice = `<p style="font-size:13px;color:#666;">✓ 沪深300在MA20上方</p>
+                    <p style="font-size:13px;color:#666;">✓ 市场宽度${market.breadth}% ≥ 60%</p>
+                    <p style="margin-top:10px;font-size:13px;">→ <strong>建议满仓持仓</strong>，保持60%股票仓位</p>`;
+            } else if (market.breadth >= 50 || market.above_ma20) {
+                advice = `<p style="font-size:13px;color:#666;">⚠ 市场宽度${market.breadth}% &lt; 60%</p>
+                    <p style="font-size:13px;color:#666;">→ ${market.above_ma20 ? '沪深300在MA20上方' : '沪深300在MA20下方'}</p>
+                    <p style="margin-top:10px;font-size:13px;">→ <strong>建议轻仓观望</strong>，保持30%仓位</p>`;
+            } else {
+                advice = `<p style="font-size:13px;color:#666;">✗ 市场宽度${market.breadth}% &lt; 50%</p>
+                    <p style="font-size:13px;color:#666;">✗ 沪深300 &lt; MA20</p>
+                    <p style="margin-top:10px;font-size:13px;">→ <strong>建议股转基/债</strong>，资金转入货币基金或债券</p>`;
+            }
+            advicePanel.innerHTML = advice;
+            
+            // 更新时间显示
+            document.getElementById('updateTime').textContent = 
+                `数据更新时间: ${market.update_time || '暂无'}`;
+        }
+        
         function loadDataStatus() {
             const saved = localStorage.getItem(DATA_KEY);
             if (saved) {
@@ -254,15 +317,10 @@
                 const now = Date.now();
                 const diff = (now - data.timestamp) / 1000 / 60; // 分钟
                 
-                document.getElementById('updateTime').textContent = 
-                    `数据更新时间: ${new Date(data.timestamp).toLocaleString('zh-CN')}`;
-                
                 if (diff > 120) { // 超过2小时
                     document.getElementById('staleAlert').classList.add('show');
                 }
             } else {
-                document.getElementById('updateTime').textContent = 
-                    '数据更新时间: 暂无记录';
                 document.getElementById('staleAlert').classList.add('show');
             }
         }
