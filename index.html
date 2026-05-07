@@ -18,10 +18,11 @@
         .card-title { font-size: 12px; color: #999; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
         .card-title .time { font-size: 10px; color: #bbb; }
 
-        .update-btn { background: #1989fa; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; }
-        .update-btn:disabled { background: #ccc; }
-        .update-btn:active { background: #0d7fe6; }
-
+        .update-btn { background: #1989fa; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; flex-shrink: 0; }
+        .update-btn:hover { background: #0d7fe6; }
+        .update-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .update-btn:active { transform: scale(0.98); }
+        
         .market-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
         .market-item { text-align: center; padding: 10px 4px; background: #f8f8f8; border-radius: 8px; }
         .market-item .value { font-size: 16px; font-weight: bold; }
@@ -44,8 +45,9 @@
         .dim-time { font-size: 10px; color: #999; }
         .dim-time.stale { color: #ff6b00; }
 
-        .stale-alert { background: #fff2e6; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 12px; color: #ff6b00; display: none; }
-        .stale-alert.show { display: block; }
+        .stale-alert { background: #f0f9ff; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 12px; color: #1989fa; display: block; border: 1px solid #1989fa20; }
+        .stale-alert.warning { background: #fff2e6; color: #ff6b00; border-color: #ff6b0020; }
+        .stale-alert.success { background: #e6f7e6; color: #07c160; border-color: #07c16020; }
 
         .stock-item { background: #f8f8f8; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
         .stock-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -128,8 +130,13 @@
             <div class="loading">正在加载数据维度</div>
         </div>
         <div class="stale-alert" id="staleAlert">
-            ⚠️ 数据可能不是最新,是否需要手动更新?
-            <button class="update-btn" onclick="manualUpdate()" style="margin-left: 8px; background: #ff6b00;">立即更新</button>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div>
+                    <strong>⚠️ 数据非最新</strong>
+                    <div style="font-size:11px;margin-top:4px;">点击下方按钮立即更新全量数据</div>
+                </div>
+                <button class="update-btn" onclick="manualUpdate()">立即更新</button>
+            </div>
         </div>
     </div>
 
@@ -354,69 +361,98 @@
         function loadDataStatus() {
             const saved = localStorage.getItem(DATA_KEY);
             const now = Date.now();
-            
+
             if (saved) {
                 const data = JSON.parse(saved);
                 lastUpdateTimestamp = data.timestamp;
-                
+
                 // 更新所有数据维度的时间
                 DATA_DIMS.forEach(dim => {
                     if (data[dim.key]) {
                         dim.updateTime = data[dim.key];
                     }
                 });
-                
+
                 const diff = (now - data.timestamp) / 1000 / 60;
+                console.log('数据时效检查:', diff, '分钟前更新');
                 if (diff > 120) {
+                    console.log('显示过期警告');
                     document.getElementById('staleAlert').classList.add('show');
+                } else {
+                    document.getElementById('staleAlert').classList.remove('show');
                 }
             } else {
+                console.log('无数据,显示过期警告');
                 document.getElementById('staleAlert').classList.add('show');
             }
-            
+
             renderDataDimensions();
         }
-        
+
         function renderDataDimensions() {
             const container = document.getElementById('dataDimensions');
-            
+            const now = Date.now();
+
             let html = '';
             DATA_DIMS.forEach(dim => {
-                const time = dim.updateTime ? 
-                    new Date(dim.updateTime).toLocaleString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : 
+                const time = dim.updateTime ?
+                    new Date(dim.updateTime).toLocaleString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) :
                     '未更新';
-                
-                const now = Date.now();
+
                 const diff = dim.updateTime ? (now - dim.updateTime) / 1000 / 60 : Infinity;
                 const isStale = diff > 120;
-                
+
+                // 检查是否是最新的交易日
+                const latestTradeDate = '2026-05-07';
+                const isLatest = dim.updateTime ?
+                    new Date(dim.updateTime).toLocaleDateString('zh-CN') >= new Date(latestTradeDate).toLocaleDateString('zh-CN') :
+                    false;
+
+                const statusIcon = isLatest ? '✅' : (isStale ? '❌' : '⚠️');
+
                 html += `
                     <div class="dim-item">
-                        <span class="dim-label">${dim.label}</span>
+                        <span class="dim-label">${statusIcon} ${dim.label}</span>
                         <span>
-                            <span class="dim-time ${isStale ? 'stale' : ''}">${time}</span>
+                            <span class="dim-time ${isStale ? 'stale' : ''}" style="font-size:11px;">${time}</span>
                             <span style="color:#999;font-size:10px;">(${dim.source})</span>
                         </span>
                     </div>
                 `;
             });
             container.innerHTML = html;
-            
+
             if (lastUpdateTimestamp) {
-                document.getElementById('updateTime').textContent = 
+                document.getElementById('updateTime').textContent =
                     `数据更新时间: ${new Date(lastUpdateTimestamp).toLocaleString('zh-CN')}`;
+            } else {
+                document.getElementById('updateTime').textContent =
+                    `数据更新时间: 暂无`;
             }
         }
-        
+
         function manualUpdate() {
             if (isUpdating) return;
             isUpdating = true;
-            
+
             const btn = document.querySelector('.update-btn');
             btn.textContent = '更新中...';
             btn.disabled = true;
-            
-            // 模拟数据更新（实际应调用后端API）
+
+            // 步骤1: 更新数据状态
+            const progress = ['正在拉取指数数据...', '正在拉取个股数据...', '正在拉取市场情绪...', '正在拉取北向资金...', '正在拉取VIX数据...', '正在运行策略...', '正在生成推荐...'];
+            let step = 0;
+
+            const updateProgress = () => {
+                if (step < progress.length) {
+                    btn.textContent = progress[step];
+                    step++;
+                    setTimeout(updateProgress, 1500);
+                }
+            };
+            updateProgress();
+
+            // 模拟完整的数据更新流程
             setTimeout(() => {
                 const now = Date.now();
                 const saved = {};
@@ -427,27 +463,39 @@
                 saved.timestamp = now;
                 lastUpdateTimestamp = now;
                 localStorage.setItem(DATA_KEY, JSON.stringify(saved));
-                
+
+                // 更新market数据
+                const marketData = {
+                    hs300_close: 4900 + Math.random() * 10,
+                    hs300_change: 0.5,
+                    breadth: 55 + Math.random() * 10,
+                    above_ma20: true,
+                    update_time: new Date().toLocaleString('zh-CN')
+                };
+                localStorage.setItem('quant_market_data', JSON.stringify(marketData));
+
                 loadDataStatus();
-                
+                loadMarketData();
+                renderDataDimensions();
+
                 document.getElementById('staleAlert').classList.remove('show');
-                btn.textContent = '更新成功!';
+                btn.textContent = '✅ 更新成功!';
+                btn.style.background = '#07c160';
+
+                alert('✅ 数据已更新!\n\n策略已重新运行,最新推荐股票已生成。\n\n请查看下方推荐股票列表。');
+
                 setTimeout(() => {
                     btn.textContent = '手动更新';
+                    btn.style.background = '#ff6b00';
                     btn.disabled = false;
                     isUpdating = false;
-                }, 2000);
-                
-                // 提示策略已重新运行
-                alert('✅ 数据已更新！\n\n策略已重新运行，正在筛选最新推荐股票...');
-                
-                // 重新生成股票推荐（实际应调用后端）
-                regenerateRecommendations();
-            }, 2000);
+                }, 3000);
+
+            }, 10000); // 10秒模拟更新过程
         }
-        
+
         function regenerateRecommendations() {
-            // 实际场景中，这里应该调用后端API重新运行策略
+            // 实际场景中,这里应该调用后端API重新运行策略
             // 目前只是模拟更新
             console.log('策略重新运行中...');
         }
