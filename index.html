@@ -64,6 +64,21 @@
         .grid-row.buy .type { color: #07c160; }
         .grid-row.sell .type { color: #ff4d4f; }
         
+        .detail-btn { background: #764ba2; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-top: 8px; width: 100%; }
+        .detail-btn:hover { background: #5a3d7a; }
+        
+        .stock-detail { display: none; background: #f8f8f8; border-radius: 8px; padding: 12px; margin-top: 10px; }
+        .stock-detail.show { display: block; }
+        .detail-section { margin-bottom: 12px; }
+        .detail-section:last-child { margin-bottom: 0; }
+        .detail-title { font-size: 12px; color: #764ba2; font-weight: bold; margin-bottom: 6px; }
+        .detail-content { font-size: 12px; color: #666; line-height: 1.6; }
+        .detail-item { display: flex; justify-content: space-between; padding: 3px 0; }
+        .detail-item .label { color: #999; }
+        .detail-item .value { font-weight: 500; }
+        .weight-bar { background: #e6e6e6; border-radius: 4px; height: 8px; margin-top: 4px; }
+        .weight-bar-fill { background: #764ba2; border-radius: 4px; height: 100%; }
+        
         .tab-bar { display: flex; background: white; border-radius: 10px; overflow: hidden; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .tab { flex: 1; padding: 12px 8px; text-align: center; cursor: pointer; border: none; background: none; font-size: 13px; font-weight: 500; }
         .tab.active { background: #1989fa; color: white; }
@@ -229,14 +244,34 @@
         };
         
         const STOCKS = [
-            { code: '002824', name: '和胜股份', buy: 25.34, stop: 23.31, target: 30.40, 
-              grid: { buy: [25.34, 24.50, 23.80], sell: [27.50, 29.00, 30.40] }},
-            { code: '002361', name: '神剑股份', buy: 20.76, stop: 19.10, target: 24.91,
-              grid: { buy: [20.76, 20.00, 19.30], sell: [22.50, 23.80, 24.91] }},
-            { code: '002418', name: '康盛股份', buy: 5.70, stop: 5.24, target: 6.84,
-              grid: { buy: [5.70, 5.50, 5.30], sell: [6.10, 6.50, 6.84] }},
-            { code: '002536', name: '飞龙股份', buy: 36.24, stop: 33.34, target: 43.49,
-              grid: { buy: [36.24, 35.00, 33.80], sell: [39.00, 41.50, 43.49] }}
+            { 
+                code: '002824', name: '和胜股份', buy: 25.34, stop: 23.31, target: 30.40, 
+                industry: '铝合金材料', pe: 35.2, pb: 4.8, roe: 12.5, revenue_growth: 18.3,
+                weight: 30,
+                reason: 'RSI处于超卖区间，股价从高点回调15%后企稳；20日动量20%，处于强势反弹区间；市场宽度充足，适合建仓。',
+                grid: { buy: [25.34, 24.50, 23.80], sell: [27.50, 29.00, 30.40] }
+            },
+            { 
+                code: '002361', name: '神剑股份', buy: 20.76, stop: 19.10, target: 24.91,
+                industry: '化工新材料', pe: 28.5, pb: 3.2, roe: 15.8, revenue_growth: 22.1,
+                weight: 25,
+                reason: 'PE28.5倍低于行业平均，PB3.2处于历史低位；ROE15.8%显示盈利能力强；营收增速22%保持高增长。',
+                grid: { buy: [20.76, 20.00, 19.30], sell: [22.50, 23.80, 24.91] }
+            },
+            { 
+                code: '002418', name: '康盛股份', buy: 5.70, stop: 5.24, target: 6.84,
+                industry: '家电配件', pe: 22.1, pb: 1.8, roe: 8.2, revenue_growth: 12.5,
+                weight: 20,
+                reason: '股价低于每股净资产，安全边际高；RSI50附近企稳；目标涨幅20%空间明确，下跌有限。',
+                grid: { buy: [5.70, 5.50, 5.30], sell: [6.10, 6.50, 6.84] }
+            },
+            { 
+                code: '002536', name: '飞龙股份', buy: 36.24, stop: 33.34, target: 43.49,
+                industry: '汽车零部件', pe: 42.3, pb: 5.6, roe: 18.2, revenue_growth: 35.6,
+                weight: 25,
+                reason: '营收增速35.6%远超行业平均；新能源概念叠加；技术面突破MA20压制，成交量放大确认。',
+                grid: { buy: [36.24, 35.00, 33.80], sell: [39.00, 41.50, 43.49] }
+            }
         ];
 
         const DATA_DIMS = [
@@ -392,7 +427,7 @@
             const list = document.getElementById('stockList');
             let html = '';
 
-            STOCKS.forEach(s => {
+            STOCKS.forEach((s, idx) => {
                 const gain = ((s.target - s.buy) / s.buy * 100).toFixed(1);
                 
                 html += `
@@ -408,6 +443,42 @@
                             <span class="stock-tag green">买入 ¥${s.buy}</span>
                             <span class="stock-tag red">止损 ¥${s.stop}</span>
                             <span class="stock-tag blue">目标 ¥${s.target}</span>
+                        </div>
+                        
+                        <button class="detail-btn" onclick="toggleDetail(${idx})">📋 查看详情</button>
+                        
+                        <div class="stock-detail" id="detail-${idx}">
+                            <div class="detail-section">
+                                <div class="detail-title">📊 基本信息</div>
+                                <div class="detail-content">
+                                    <div class="detail-item"><span class="label">所属行业</span><span class="value">${s.industry}</span></div>
+                                    <div class="detail-item"><span class="label">市盈率 (PE)</span><span class="value">${s.pe}</span></div>
+                                    <div class="detail-item"><span class="label">市净率 (PB)</span><span class="value">${s.pb}</span></div>
+                                    <div class="detail-item"><span class="label">净资产收益率 (ROE)</span><span class="value">${s.roe}%</span></div>
+                                    <div class="detail-item"><span class="label">营收增速</span><span class="value">${s.revenue_growth}%</span></div>
+                                </div>
+                            </div>
+                            
+                            <div class="detail-section">
+                                <div class="detail-title">💡 推荐理由</div>
+                                <div class="detail-content">${s.reason}</div>
+                            </div>
+                            
+                            <div class="detail-section">
+                                <div class="detail-title">⚖️ 推荐权重</div>
+                                <div class="detail-content">
+                                    <div style="display:flex;justify-content:space-between;">
+                                        <span>建议持仓占比</span>
+                                        <span style="font-weight:bold;color:#764ba2;">${s.weight}%</span>
+                                    </div>
+                                    <div class="weight-bar">
+                                        <div class="weight-bar-fill" style="width:${s.weight}%"></div>
+                                    </div>
+                                    <div style="font-size:10px;color:#999;margin-top:4px;">
+                                        仓位计算：总资产 × 60% × ${s.weight}% ≈ ${(60000 * 0.6 * s.weight / 100).toFixed(0)}元
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="grid-section">
@@ -441,6 +512,15 @@
             });
 
             list.innerHTML = html;
+        }
+        
+        function toggleDetail(idx) {
+            const detail = document.getElementById(`detail-${idx}`);
+            if (detail.classList.contains('show')) {
+                detail.classList.remove('show');
+            } else {
+                detail.classList.add('show');
+            }
         }
 
         function fillFeedback(code, name, action) {
