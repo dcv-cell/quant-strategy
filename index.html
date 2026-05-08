@@ -319,26 +319,38 @@
         async function init() {
             document.getElementById('feedDate').value = new Date().toISOString().split('T')[0];
             loadDataStatus();
-            loadMarketData();
             renderDataDimensions();
             
-            // 从API加载股票数据
+            // 从API加载操作数据
             try {
                 const resp = await fetch('/api/operation');
                 const data = await resp.json();
-                if (data.operation && data.operation.stocks) {
+                
+                // 保存操作数据
+                window.operationData = data;
+                localStorage.setItem('quant_operation', JSON.stringify(data));
+                
+                // 更新市场数据
+                if (data.market) {
+                    localStorage.setItem('quant_market_data', JSON.stringify(data.market));
+                    loadMarketData();
+                }
+                
+                // 处理股票列表
+                if (data.operation && data.operation.stocks && data.operation.stocks.length > 0) {
                     window.stockList = data.operation.stocks;
                     localStorage.setItem('quant_stocks', JSON.stringify(data.operation.stocks));
+                } else {
+                    window.stockList = [];
                 }
-                // 同时获取信号（含现金管理推荐）
-                const sigResp = await fetch('/api/signal');
-                const sigData = await sigResp.json();
-                if (sigData.cash_recommendation) {
-                    window.cashRec = sigData.cash_recommendation;
-                    localStorage.setItem('quant_cash_rec', JSON.stringify(sigData.cash_recommendation));
+                
+                // 保存现金管理推荐
+                if (data.operation && data.operation.cash_recommendation) {
+                    window.cashRec = data.operation.cash_recommendation;
                 }
             } catch (e) {
-                console.log('从API加载股票失败', e);
+                console.log('从API加载失败', e);
+                loadMarketData();
             }
             
             renderStocks();
@@ -355,12 +367,28 @@
             document.getElementById('breadth').textContent = market.breadth ? market.breadth + '%' : '--%';
             document.getElementById('hs300MA20').textContent = market.above_ma20 ? '↑上方' : '↓下方';
 
-            // 更新状态栏
+// 更新状态栏 - 优先使用API返回的action_text
             const statusBar = document.getElementById('statusBar');
             const statusText = document.getElementById('statusText');
             const statusDesc = document.getElementById('statusDesc');
-
-            if (market.breadth >= 60 && market.above_ma20) {
+            
+            const opData = window.operationData;
+            if (opData && opData.action_text) {
+                const action = opData.action;
+                if (action === 'cash' || action === 'transfer') {
+                    statusBar.className = 'status-bar status-neutral';
+                    statusText.textContent = opData.action_text;
+                    statusDesc.textContent = '资金空闲，寻找最佳理财方式';
+                } else if (action === 'stock') {
+                    statusBar.className = 'status-bar status-bull';
+                    statusText.textContent = opData.action_text;
+                    statusDesc.textContent = '建议' + (opData.stock_ratio * 100) + '%仓位';
+                } else {
+                    statusBar.className = 'status-bar status-neutral';
+                    statusText.textContent = opData.action_text;
+                    statusDesc.textContent = '建议观望';
+                }
+            } else if (market.breadth >= 60 && market.above_ma20) {
                 statusBar.className = 'status-bar status-bull';
                 statusText.textContent = '🟢 满仓持仓';
                 statusDesc.textContent = '建议60%仓位';
@@ -374,25 +402,36 @@
                 statusDesc.textContent = '建议空仓观望';
             }
 
-            // 更新操作建议
+            // 更新操作建议 - 使用API数据
             const advicePanel = document.getElementById('advicePanel');
             let advice = '';
-            if (market.breadth >= 60 && market.above_ma20) {
-                advice = `<p style="font-size:13px;color:#666;">✓ 沪深300在MA20上方</p>
-                    <p style="font-size:13px;color:#666;">✓ 市场宽度${market.breadth}% ≥ 60%</p>
-                    <p style="margin-top:10px;font-size:13px;">→ <strong>建议满仓持仓</strong>,保持60%股票仓位</p>`;
+            
+            if (opData && opData.operation && opData.operation.type === '空仓观望' && opData.operation.cash_recommendation) {
+                const cr = opData.operation.cash_recommendation;
+                advice = '<div style="background:linear-gradient(135deg,#667eea,#764ba2);padding:12px;border-radius:8px;color:white;">' +
+                    '<div style="font-size:14px;font-weight:bold;margin-bottom:8px;">💰 ' + opData.operation.type + '</div>' +
+                    '<div style="font-size:12px;opacity:0.9;margin-bottom:6px;">' + cr.type + ' - ' + cr.code + '</div>' +
+                    '<div style="font-size:13px;">年化收益: <strong>' + cr.return + '</strong></div>' +
+                    '<div style="font-size:11px;opacity:0.8;margin-top:6px;">📝 ' + cr.note + '</div>' +
+                '</div>';
+            } else if (opData && opData.operation && opData.operation.type === '买入股票') {
+                advice = '<p style="font-size:13px;color:#666;">✓ 沪深300在MA20上方</p>' +
+                    '<p style="font-size:13px;color:#666;">✓ 市场宽度' + market.breadth + '% ≥ 60%</p>' +
+                    '<p style="margin-top:10px;font-size:13px;">→ <strong>建议满仓持仓</strong>,保持' + (opData.stock_ratio * 100) + '%股票仓位</p>';
+            } else if (market.breadth >= 60 && market.above_ma20) {
+                advice = '<p style="font-size:13px;color:#666;">✓ 沪深300在MA20上方</p>' +
+                    '<p style="font-size:13px;color:#666;">✓ 市场宽度' + market.breadth + '% ≥ 60%</p>' +
+                    '<p style="margin-top:10px;font-size:13px;">→ <strong>建议满仓持仓</strong>,保持60%股票仓位</p>';
             } else if (market.breadth >= 50 || market.above_ma20) {
-                advice = `<p style="font-size:13px;color:#666;">⚠ 市场宽度${market.breadth}% &lt; 60%</p>
-                    <p style="font-size:13px;color:#666;">→ ${market.above_ma20 ? '沪深300在MA20上方' : '沪深300在MA20下方'}</p>
-                    <p style="margin-top:10px;font-size:13px;">→ <strong>建议轻仓观望</strong>,保持30%仓位</p>`;
+                advice = '<p style="font-size:13px;color:#666;">⚠ 市场宽度' + market.breadth + '% < 60%</p>' +
+                    '<p style="font-size:13px;color:#666;">→ ' + (market.above_ma20 ? '沪深300在MA20上方' : '沪深300在MA20下方') + '</p>' +
+                    '<p style="margin-top:10px;font-size:13px;">→ <strong>建议轻仓观望</strong>,保持30%仓位</p>';
             } else {
-                advice = `<p style="font-size:13px;color:#666;">✗ 市场宽度${market.breadth}% &lt; 50%</p>
-                    <p style="font-size:13px;color:#666;">✗ 沪深300 &lt; MA20</p>
-                    <p style="margin-top:10px;font-size:13px;">→ <strong>建议股转基/债</strong>,资金转入货币基金或债券</p>`;
+                advice = '<p style="font-size:13px;color:#666;">✗ 市场宽度' + market.breadth + '% < 50%</p>' +
+                    '<p style="font-size:13px;color:#666;">✗ 沪深300 < MA20</p>' +
+                    '<p style="margin-top:10px;font-size:13px;">→ <strong>建议股转基/债</strong>,资金转入货币基金或债券</p>';
             }
-            advicePanel.innerHTML = advice;
-
-            // 更新时间显示
+// 更新时间显示
             document.getElementById('updateTime').textContent =
                 `数据更新时间: ${market.update_time || '暂无'}`;
         }
