@@ -408,11 +408,25 @@
             
             if (opData && opData.operation && opData.operation.type === '空仓观望' && opData.operation.cash_recommendation) {
                 const cr = opData.operation.cash_recommendation;
+                const alts = opData.operation.alternative_options || [];
+                let altsHtml = '';
+                if (alts.length > 0) {
+                    altsHtml = '<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.3);">' +
+                        '<div style="font-size:11px;opacity:0.8;margin-bottom:6px;">其他选择:</div>';
+                    for (let i = 0; i < alts.length; i++) {
+                        altsHtml += '<div style="font-size:11px;display:flex;justify-content:space-between;margin-bottom:4px;">' +
+                            '<span>' + alts[i].type + '</span>' +
+                            '<span style="color:#ffd700;">' + alts[i].return + '</span></div>';
+                    }
+                    altsHtml += '</div>';
+                }
                 advice = '<div style="background:linear-gradient(135deg,#667eea,#764ba2);padding:12px;border-radius:8px;color:white;">' +
                     '<div style="font-size:14px;font-weight:bold;margin-bottom:8px;">💰 ' + opData.operation.type + '</div>' +
                     '<div style="font-size:12px;opacity:0.9;margin-bottom:6px;">' + cr.type + ' - ' + cr.code + '</div>' +
-                    '<div style="font-size:13px;">年化收益: <strong>' + cr.return + '</strong></div>' +
-                    '<div style="font-size:11px;opacity:0.8;margin-top:6px;">📝 ' + cr.note + '</div>' +
+                    '<div style="font-size:13px;">年化收益: <strong style="font-size:18px;">' + cr.return + '</strong></div>' +
+                    '<div style="font-size:11px;opacity:0.8;margin-top:4px;">' + (cr.safety || '') + '</div>' +
+                    '<div style="font-size:11px;opacity:0.8;margin-top:4px;">📝 ' + cr.note + '</div>' +
+                    altsHtml +
                 '</div>';
             } else if (opData && opData.operation && opData.operation.type === '买入股票') {
                 advice = '<p style="font-size:13px;color:#666;">✓ 沪深300在MA20上方</p>' +
