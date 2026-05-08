@@ -261,6 +261,11 @@
     <script>
         const STOCKS_KEY = 'quant_feedback_logs';
         const DATA_KEY = 'quant_data_status';
+        
+        // API 配置 - 修改这里以连接不同的后端服务
+        // 本地开发: '' (空字符串)
+        // 生产环境: 填入你的公网后端地址，如 'https://your-ngrok-url.lhr.life'
+        const API_BASE_URL = 'https://caa1b1ae9cf075.lhr.life';  // 隧道URL，重启后需更新
 
         // 默认市场数据(当无数据时显示)
         const DEFAULT_MARKET = {
@@ -323,7 +328,7 @@
             
             // 从API加载操作数据
             try {
-                const resp = await fetch('/api/operation');
+                const resp = await fetch(API_BASE_URL + '/api/operation');
                 const data = await resp.json();
                 
                 // 保存操作数据
@@ -533,12 +538,12 @@
 
             try {
                 // 调用后端刷新接口
-                const resp = await fetch('/api/refresh', { method: 'POST' });
+                const resp = await fetch(API_BASE_URL + '/api/refresh', { method: 'POST' });
                 const result = await resp.json();
                 
                 if (result.status === 'success') {
                     // 获取最新操作数据（含实时价格）
-                    const opResp = await fetch('/api/operation');
+                    const opResp = await fetch(API_BASE_URL + '/api/operation');
                     const opData = await opResp.json();
                     
                     if (opData.operation && opData.operation.stocks) {
