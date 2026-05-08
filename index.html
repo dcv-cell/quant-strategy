@@ -297,11 +297,24 @@
 
         let isUpdating = false;
 
-        function init() {
+        async function init() {
             document.getElementById('feedDate').value = new Date().toISOString().split('T')[0];
             loadDataStatus();
             loadMarketData();
             renderDataDimensions();
+            
+            // 从API加载股票数据
+            try {
+                const resp = await fetch('/api/operation');
+                const data = await resp.json();
+                if (data.operation && data.operation.stocks) {
+                    window.stockList = data.operation.stocks;
+                    localStorage.setItem('quant_stocks', JSON.stringify(data.operation.stocks));
+                }
+            } catch (e) {
+                console.log('从API加载股票失败', e);
+            }
+            
             renderStocks();
             renderLogs();
         }
@@ -431,7 +444,7 @@
             }
         }
 
-        function manualUpdate() {
+        async function manualUpdate() {
             if (isUpdating) return;
             isUpdating = true;
 
@@ -439,59 +452,50 @@
             btn.textContent = '更新中...';
             btn.disabled = true;
 
-            // 步骤1: 更新数据状态
-            const progress = ['正在拉取指数数据...', '正在拉取个股数据...', '正在拉取市场情绪...', '正在拉取北向资金...', '正在拉取VIX数据...', '正在运行策略...', '正在生成推荐...'];
-            let step = 0;
-
-            const updateProgress = () => {
-                if (step < progress.length) {
-                    btn.textContent = progress[step];
-                    step++;
-                    setTimeout(updateProgress, 1500);
+            try {
+                // 调用后端刷新接口
+                const resp = await fetch('/api/refresh', { method: 'POST' });
+                const result = await resp.json();
+                
+                if (result.status === 'success') {
+                    // 获取最新操作数据（含实时价格）
+                    const opResp = await fetch('/api/operation');
+                    const opData = await opResp.json();
+                    
+                    if (opData.operation && opData.operation.stocks) {
+                        window.stockList = opData.operation.stocks;
+                        localStorage.setItem('quant_stocks', JSON.stringify(opData.operation.stocks));
+                        renderStocks();
+                    }
+                    
+                    // 更新市场数据
+                    if (opData.market) {
+                        localStorage.setItem('quant_market_data', JSON.stringify(opData.market));
+                        loadMarketData();
+                    }
+                    
+                    loadDataStatus();
+                    renderDataDimensions();
+                    
+                    document.getElementById('staleAlert').classList.remove('show');
+                    btn.textContent = '✅ 更新成功!';
+                    btn.style.background = '#07c160';
+                } else {
+                    throw new Error(result.message || '更新失败');
                 }
-            };
-            updateProgress();
+            } catch (e) {
+                console.error('更新失败:', e);
+                btn.textContent = '❌ 更新失败';
+                btn.style.background = '#ff4d4f';
+                alert('更新失败: ' + e.message);
+            }
 
-            // 模拟完整的数据更新流程
             setTimeout(() => {
-                const now = Date.now();
-                const saved = {};
-                DATA_DIMS.forEach(dim => {
-                    dim.updateTime = now;
-                    saved[dim.key] = now;
-                });
-                saved.timestamp = now;
-                lastUpdateTimestamp = now;
-                localStorage.setItem(DATA_KEY, JSON.stringify(saved));
-
-                // 更新market数据
-                const marketData = {
-                    hs300_close: 4900 + Math.random() * 10,
-                    hs300_change: 0.5,
-                    breadth: 55 + Math.random() * 10,
-                    above_ma20: true,
-                    update_time: new Date().toLocaleString('zh-CN')
-                };
-                localStorage.setItem('quant_market_data', JSON.stringify(marketData));
-
-                loadDataStatus();
-                loadMarketData();
-                renderDataDimensions();
-
-                document.getElementById('staleAlert').classList.remove('show');
-                btn.textContent = '✅ 更新成功!';
-                btn.style.background = '#07c160';
-
-                alert('✅ 数据已更新!\n\n策略已重新运行,最新推荐股票已生成。\n\n请查看下方推荐股票列表。');
-
-                setTimeout(() => {
-                    btn.textContent = '手动更新';
-                    btn.style.background = '#ff6b00';
-                    btn.disabled = false;
-                    isUpdating = false;
-                }, 3000);
-
-            }, 10000); // 10秒模拟更新过程
+                btn.textContent = '手动更新';
+                btn.style.background = '#ff6b00';
+                btn.disabled = false;
+                isUpdating = false;
+            }, 3000);
         }
 
         function regenerateRecommendations() {
@@ -500,26 +504,48 @@
             console.log('策略重新运行中...');
         }
 
+        function loadStocksFromStorage() {
+            try {
+                const saved = localStorage.getItem('quant_stocks');
+                if (saved) return JSON.parse(saved);
+            } catch (e) {}
+            return null;
+        }
+
         function renderStocks() {
             const list = document.getElementById('stockList');
             let html = '';
 
-            STOCKS.forEach((s, idx) => {
-                const gain = ((s.target - s.buy) / s.buy * 100).toFixed(1);
+            // 优先从API获取股票数据
+            const stocks = window.stockList || loadStocksFromStorage() || STOCKS;
+
+            stocks.forEach((s, idx) => {
+                // 使用实时价格
+                const currentPrice = s.current_price || s.close || s.buy || 0;
+                const buyPrice = s.buy_price || s.buy || currentPrice;
+                const stopPrice = s.stop_loss || s.stop || buyPrice * 0.9;
+                const targetPrice = s.target || buyPrice * 1.2;
+                const changePct = s.change_pct || s.price_chg || 0;
+                const changeColor = changePct >= 0 ? 'green' : 'red';
+                const gain = ((targetPrice - buyPrice) / buyPrice * 100).toFixed(1);
 
                 html += `
                     <div class="stock-item">
                         <div class="stock-header">
                             <div>
-                                <span class="stock-name">${s.name}</span>
-                                <span class="stock-code">${s.code}</span>
+                                <span class="stock-name">${s.name || s.stock_name || s.code}</span>
+                                <span class="stock-code">${s.code || s.stock_code}</span>
                             </div>
-                            <button class="btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="fillFeedback('${s.code}', '${s.name}', 'buy')">已买入</button>
+                            <button class="btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="fillFeedback('${s.code || s.stock_code}', '${s.name || s.stock_name || ''}', 'buy')">已买入</button>
                         </div>
                         <div class="stock-grid">
-                            <span class="stock-tag green">买入 ¥${s.buy}</span>
-                            <span class="stock-tag red">止损 ¥${s.stop}</span>
-                            <span class="stock-tag blue">目标 ¥${s.target}</span>
+                            <span class="stock-tag green">买 ¥${buyPrice.toFixed(2)}</span>
+                            <span class="stock-tag red">损 ¥${stopPrice.toFixed(2)}</span>
+                            <span class="stock-tag blue">盈 ¥${targetPrice.toFixed(2)}</span>
+                            <span class="stock-tag ${changeColor}">${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%</span>
+                        </div>
+                        <div style="font-size:11px;color:#666;margin-top:4px;">
+                            现价: ¥${currentPrice.toFixed(2)} | 空间: ${gain}%
                         </div>
 
                         <button class="detail-btn" onclick="toggleDetail(${idx})">📋 查看详情</button>
