@@ -110,6 +110,25 @@
         .loading { text-align: center; padding: 20px; color: #999; }
         .loading::after { content: '...'; animation: dots 1.5s infinite; }
         @keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
+
+        /* 现金管理推荐样式 */
+        .cash-recommendation { padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white; }
+        .cash-title { font-size: 15px; font-weight: bold; margin-bottom: 4px; }
+        .cash-subtitle { font-size: 11px; opacity: 0.85; margin-bottom: 12px; }
+        .cash-main { background: rgba(255,255,255,0.15); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+        .cash-type { font-size: 16px; font-weight: bold; margin-bottom: 4px; }
+        .cash-code { font-size: 11px; opacity: 0.9; margin-bottom: 8px; }
+        .cash-return { font-size: 13px; margin-bottom: 4px; }
+        .cash-return strong { font-size: 18px; }
+        .cash-info { font-size: 11px; opacity: 0.85; margin-bottom: 4px; }
+        .cash-best { font-size: 11px; opacity: 0.85; }
+        .cash-note { font-size: 11px; opacity: 0.9; padding: 8px; background: rgba(0,0,0,0.1); border-radius: 6px; margin-top: 8px; }
+        .cash-others { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.2); }
+        .cash-others-title { font-size: 11px; opacity: 0.85; margin-bottom: 6px; }
+        .cash-other-item { display: flex; justify-content: space-between; font-size: 11px; padding: 4px 0; }
+        .cash-other-type { font-weight: 500; }
+        .cash-other-return { color: #ffd700; }
+        .cash-other-for { opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -310,6 +329,13 @@
                 if (data.operation && data.operation.stocks) {
                     window.stockList = data.operation.stocks;
                     localStorage.setItem('quant_stocks', JSON.stringify(data.operation.stocks));
+                }
+                // 同时获取信号（含现金管理推荐）
+                const sigResp = await fetch('/api/signal');
+                const sigData = await sigResp.json();
+                if (sigData.cash_recommendation) {
+                    window.cashRec = sigData.cash_recommendation;
+                    localStorage.setItem('quant_cash_rec', JSON.stringify(sigData.cash_recommendation));
                 }
             } catch (e) {
                 console.log('从API加载股票失败', e);
@@ -518,6 +544,45 @@
 
             // 优先从API获取股票数据
             const stocks = window.stockList || loadStocksFromStorage() || STOCKS;
+
+            // 无股票时显示现金管理推荐
+            if (!stocks || stocks.length === 0) {
+                const cashRec = window.cashRec || JSON.parse(localStorage.getItem('quant_cash_rec') || 'null');
+                if (cashRec && cashRec.best_option) {
+                    const opt = cashRec.best_option;
+                    html = `
+                        <div class="cash-recommendation">
+                            <div class="cash-title">💰 现金管理推荐</div>
+                            <div class="cash-subtitle">今日无股票推荐，资金最优方式</div>
+                            <div class="cash-main">
+                                <div class="cash-type">${opt.type}</div>
+                                <div class="cash-code">${opt.code}</div>
+                                <div class="cash-return">年化收益: <strong>${opt.annualized_return}</strong></div>
+                                <div class="cash-info">流动性: ${opt.liquidity} | 门槛: ${opt.min_amount}</div>
+                                <div class="cash-best">最适合: ${opt.best_for}</div>
+                            </div>
+                            ${cashRec.note ? `<div class="cash-note">📝 ${cashRec.note}</div>` : ''}
+                            ${cashRec.all_options && cashRec.all_options.length > 1 ? `
+                                <div class="cash-others">
+                                    <div class="cash-others-title">其他选择:</div>
+                                    ${cashRec.all_options.slice(1).map(o => `
+                                        <div class="cash-other-item">
+                                            <span class="cash-other-type">${o.type}</span>
+                                            <span class="cash-other-return">${o.annualized_return}</span>
+                                            <span class="cash-other-for">(${o.best_for})</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                    list.innerHTML = html;
+                    return;
+                }
+                html = '<div class="empty">暂无推荐</div>';
+                list.innerHTML = html;
+                return;
+            }
 
             stocks.forEach((s, idx) => {
                 // 使用实时价格
